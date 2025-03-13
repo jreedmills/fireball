@@ -184,6 +184,25 @@ enemies <- rbind(goblins, demons, undead) |>
 ```
 
 ```{r}
+num_enemies = nrow(enemies) # determine length of the enemies data frame
+fireball_list = vector("list", length = nrow(enemies)) # initialize blank list to store fireball
+
+# for loop to run fireball function
+for (i in 1:num_enemies) {
+ fireball_effect = fireball(enemies[i,])
+ fireball_list[[i]] = fireball_effect
+}
+
+fireball_list_df = bind_rows(fireball_list) # turn list into dataframe
+
+
+# purrr to run fireball function
+fireball_list2 <- map(1:nrow(enemies), ~ fireball(enemies[.x, ]))
+fireball_list_df2 <- bind_rows(fireball_list) # Combine list elements into a dataframe
+
+```
+
+```{r}
 
 # Simulate 10,000 fireball scenarios
 simulated_fireball <- replicate(1000, fireball(enemies), simplify = FALSE)
