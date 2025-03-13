@@ -155,7 +155,7 @@ knitr::kable(crispy_enemies)
 
 We can see that there are less enemies than we started with, as some of them were killed by the fireball. Additionally, their HP has been updated according to the damage they took.
 
-Lets create and test fireball on a bunch of enemies with different stats, and plot our results:
+Lets create and test fireball on a bunch of enemies with different stats, and plot our results. We'll have a goblin group, a demonic group (resistant to fire), and an undead group (vulnerable to fire), each with three different enemy types that have their own HP and modifiers.
 
 ```{r}
 
@@ -278,5 +278,5 @@ ggplot(survival_probabilities, aes(x = species, y = survival_rate, fill = army))
 
 ```
 
-We can see that enemies with higher HP (i.e. Ogres) have a much higher probability of surviving a fireball attack than enemies with lower HP (i.e. Goblins). The other modifiers, particularly the fire resistance of the demons, also seem be significant for enemies with low-mid HP. 
+We can see that enemies with higher HP (i.e. Ogres) have a much higher probability of surviving a fireball attack than enemies with lower HP (i.e. Goblins). The other modifiers, particularly the fire resistance and vulnerabilities, also seem be significant.
 
