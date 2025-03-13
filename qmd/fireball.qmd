@@ -14,15 +14,15 @@ execute:
 
 # Introduction
 
-In this excercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (DnD) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in DnD often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on the results of dice rolls, the caster's difficulty class (DC), the affected creatures' damage immunities, resistances or vulnerabilities, and other modifiers. In order to simulate this, we will create three functions:
+In this exercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (DnD) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in DnD often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on the results of dice rolls, the caster's difficulty class (DC), the affected creatures' damage immunities, resistances or vulnerabilities, and other modifiers. In order to simulate this, we will create three functions:
 
-- dice_roll(): A function to simulate rolling different types of dice
+-   dice_roll(): A function to simulate rolling different types of dice
 
-- targets(): A function that creates a dataframe of enemies that will be hit by fireball
+-   targets(): A function that creates a dataframe of enemies that will be hit by fireball
 
-- fireball(): A function that simulates dice rolls and resulting fireball damage for each enemy
+-   fireball(): A function that simulates dice rolls and resulting fireball damage for each enemy
 
-- clean_dead(): A function that will remove dead enemies from the battlefield and remove intermediate information
+-   clean_dead(): A function that will remove dead enemies from the battlefield and remove intermediate information
 
 # Libraries
 
@@ -30,92 +30,47 @@ In this excercise, we will create and showcase a function that simulates the "fi
 
 library(tidyverse)
 library(dplyr)
+library(here)
+
 
 ```
+
 # Dice roll function
 
 The dice_roll() function will take two inputs:
 
-- n = number of dice to be rolled
+-   n = number of dice to be rolled
 
-- d = number of sides on each dice (possible values)
+-   d = number of sides on each dice (possible values)
 
 It will simulate each dice roll and return the result
 
 ```{r}
-# Function to roll dice and return individual results
-dice_roll <- function(n, d) {
-  sample(1:d, size = n, replace = TRUE)
-}
+source(here("R", "dice_roll.R"))
 ```
 
 # Targets function
 
 The targets() function will create a dataframe representing enemies that will be hit by the fireball spell. The resulting dataframe will include information about the enemies as defined by the following inputs:
 
-- n = the number of unique enemy types
+-   n = the number of unique enemy types
 
-- HP = health points of each enemy or enemy type
+-   HP = health points of each enemy or enemy type
 
-- proficiency_bonus = a number that increases some dice rolls
+-   proficiency_bonus = a number that increases some dice rolls
 
-- ability_modifier = a number that increases some dice rolls
+-   ability_modifier = a number that increases some dice rolls
 
-- name = the name of each enemy or enemy type
+-   name = the name of each enemy or enemy type
 
-- resistances = types of damage the enemy or enemy type is resistant to 
+-   resistances = types of damage the enemy or enemy type is resistant to
 
-- vulnerabilities = types of damage the enemy or enemy type is vulnerable to 
+-   vulnerabilities = types of damage the enemy or enemy type is vulnerable to
 
-- immunities = types of damage the enemy or enemy type is immune to 
+-   immunities = types of damage the enemy or enemy type is immune to
 
 ```{r}
-targets <- function(n = 1, HP, proficiency_bonus, ability_modifier, name, 
-                    resistances = "None", vulnerabilities = "None", immunities = "None") {
-  
-  # Expand values to match enemy counts
-  enemy_counts <- rep(name, n)
-  HP_expanded <- rep(HP, n)
-  proficiency_bonus_expanded <- rep(proficiency_bonus, n)
-  ability_modifier_expanded <- rep(ability_modifier, n)
-
-  # Number duplicate names (e.g., "Goblin 1", "Goblin 2", ..., "Orc 1", ...)
-  enemy_counts <- ave(enemy_counts, enemy_counts, FUN = function(x) if (length(x) > 1) paste0(x, " ", seq_along(x)) else x)
-
-  # Helper function to process resistances, vulnerabilities, and immunities
-  parse_traits <- function(input, enemy_total) {
-    if (is.null(input)) {
-      return(rep(list(character(0)), enemy_total))  # Default to empty list
-    }
-    input <- as.character(input)
-    input <- ifelse(input == "", "None", input)
-    trait_list <- lapply(strsplit(input, ",\\s*"), function(x) if ("None" %in% x) character(0) else x)
-    return(rep(trait_list, length.out = enemy_total))  # Expand correctly
-  }
-
-  # Process resistances, vulnerabilities, and immunities
-  total_enemies <- sum(n)
-  resistances_expanded <- parse_traits(resistances, total_enemies)
-  vulnerabilities_expanded <- parse_traits(vulnerabilities, total_enemies)
-  immunities_expanded <- parse_traits(immunities, total_enemies)
-
-  # Create DataFrame
-  combined_targets <- data.frame(
-    name = enemy_counts,
-    HP = HP_expanded,
-    proficiency_bonus = proficiency_bonus_expanded,
-    ability_modifier = ability_modifier_expanded,
-    resistances = I(resistances_expanded),
-    vulnerabilities = I(vulnerabilities_expanded),
-    immunities = I(immunities_expanded)
-  )
-
-combined_targets <- combined_targets |>
-    mutate(species = str_remove(name, "\\s\\d+$"))  # Remove only the last number (after the last space)
-
-  
-  return(combined_targets)
-}
+source(here("R", "targets.R"))
 ```
 
 ### Inputs
@@ -153,67 +108,15 @@ We can see that the different enemy types have different stats, and are named ap
 
 Now that we have our enemies, lets create a function to make them explode! The fireball() function will take the following inputs:
 
-- targets = dataframe of targets that will be hit by fireball
+-   targets = dataframe of targets that will be hit by fireball
 
-- DC = the caster's Difficulty Class (higher DC -> more likely the spell does more damage)
+-   DC = the caster's Difficulty Class (higher DC -\> more likely the spell does more damage)
 
-- spell_lvl = the level that the caster chooses to cast fireball at (higher spell_lvl -> more damage)
+-   spell_lvl = the level that the caster chooses to cast fireball at (higher spell_lvl -\> more damage)
 
 ```{r}
 
-fireball <- function(targets, DC = 12, spell_lvl = 3){
-  
-  save_roll_raw = numeric(nrow(targets))
-  save_roll = numeric(nrow(targets))
-  saved = logical(nrow(targets))
-  dmg_rolls = vector("list", nrow(targets))
-  dmg = numeric(nrow(targets))
-  
-  for (i in 1:nrow(targets)) {
-    
-    # Saving Throw Calculation
-    save_roll_raw[i] = dice_roll(1,20)
-    save_roll[i] = save_roll_raw[i] + targets$proficiency_bonus[i] + targets$ability_modifier[i]
-    saved[i] = save_roll[i] >= DC  # TRUE if save is successful
-    
-    # Base Fireball Damage
-    dmg_rolls[[i]] = dice_roll(spell_lvl + 5, 6)
-    base_dmg = sum(unlist(dmg_rolls[i]))
-
-    # Apply Half Damage if Saved
-    if (saved[i]) {
-      base_dmg = floor(0.5 * base_dmg)
-    }
-    
-    # Check Fire Resistance, Vulnerability, and Immunity
-    if ("Fire" %in% targets$immunities[[i]]) {
-      dmg[i] = 0  # Immune means no damage
-    } else if ("Fire" %in% targets$resistances[[i]]) {
-      dmg[i] = floor(0.5 * base_dmg)  # Resistance halves the damage
-    } else if ("Fire" %in% targets$vulnerabilities[[i]]) {
-      dmg[i] = 2 * base_dmg  # Vulnerability doubles the damage
-    } else {
-      dmg[i] = base_dmg  # Default damage
-    }
-
-    # Update Target HP and Stats
-    targets$HP_starting[i] = targets$HP[i]
-    targets$save_roll_raw[i] = save_roll_raw[i]
-    targets$save_roll[i] = save_roll[i]
-    targets$DC[i] = DC
-    targets$saved[i] = saved[i]
-    targets$dmg_rolls[i] = paste(dmg_rolls[i], collapse = ",")
-    targets$dmg[i] = as.integer(dmg[i])
-    targets$HP[i] = max(0, targets$HP[i] - dmg[i])  # Prevent HP from going below 0
-    targets$alive[i] = targets$HP[i] > 0
-    
-  }
-  
-  targets <- targets |>
-    mutate(dmg = as.numeric(dmg))
-  
-  return(targets)
-}
+source(here("R", "fireball.R"))
 
 ```
 
@@ -231,13 +134,7 @@ It looks like something happened, but there's a lot of information. Lets make a 
 
 ```{r}
 
-clean_dead <- function(targets){
-  targets = targets |>
-    filter(alive) |>
-    select(any_of(c("army", "species", "name", "HP", "proficiency_bonus", "ability_modifier", "resistances", "vulnerabilities", "immunities")))
-  
-  return(targets)
-}
+source(here("R", "clean_dead.R"))
 
 crispy_enemies <- crispy_enemies |>
   clean_dead()
@@ -246,33 +143,43 @@ knitr::kable(crispy_enemies)
 
 ```
 
-We can see that there are 4 goblins and 6 orcs left, indicating that the orcs's extra HP was more beneficial than the goblins
+We can see that there are 4 goblins and 6 orcs left, indicating that the orcs's extra HP was more beneficial than the goblins extra ability modifier.
+
+Lets create and test fireball on a bunch of enemies with different stats, and plot our results:
 
 ```{r}
 
 goblins <- targets(
-  n = c(10, 4, 1), 
-  HP = c(7, 20, 50), 
-  proficiency_bonus = c(0, 1, 2), 
-  ability_modifier = c(2, 2, 3),
+  n = c(30, 10, 5), 
+  HP = c(10, 20, 50), 
+  proficiency_bonus = c(1, 0, 0), 
+  ability_modifier = c(3, 2, 0),
   name = c("Goblin", "Orc", "Ogre")
 ) |>
     mutate(army = "Goblin Horde")
 
 demons <- targets(
-  n = c(10, 4, 1), 
-  HP = c(7, 20, 50), 
-  proficiency_bonus = c(0, 1, 2), 
-  ability_modifier = c(2, 2, 3),
+  n = c(30, 10, 5), 
+  HP = c(10, 20, 50), 
+  proficiency_bonus = c(0, 1, 0), 
+  ability_modifier = c(3, 2, 2),
   name = c("Imp", "Hell Hound", "Demon Lord"),
   resistances = "Fire"
 ) |>
   mutate(army = "Demonic Legion")
 
+undead <- targets(
+  n = c(30, 10, 5),
+  HP = c(10, 20, 50),
+  proficiency_bonus = c(0, 0, 1),
+  ability_modifier = c(0, 0, 2),
+  name = c("Zombie", "Ghoul", "Lich")
+) |>
+  mutate(army = "Undead Swarm")
 
-enemies <- rbind(goblins, demons) |>
-  mutate(species = factor(species, levels = c("Goblin", "Orc", "Ogre", "Imp", "Hell Hound", "Demon Lord")),
-         army = factor(army, levels = c("Goblin Horde", "Demonic Legion")))
+enemies <- rbind(goblins, demons, undead) |>
+  mutate(species = factor(species, levels = c("Goblin", "Orc", "Ogre", "Imp", "Hell Hound", "Demon Lord", "Zombie", "Ghoul", "Lich")),
+         army = factor(army, levels = c("Goblin Horde", "Demonic Legion", "Undead Swarm")))
 
 ```
 
@@ -311,11 +218,10 @@ ggplot(summarized_fireball, aes(x = species, y = avg_dmg, fill = army)) +
     fill = "Enemy Group"
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_manual(values = c("Goblin Horde" = "yellowgreen", "Demonic Legion" = "firebrick"))
+  scale_fill_manual(values = c("Goblin Horde" = "yellowgreen", "Demonic Legion" = "firebrick", "Undead Swarm" = "thistle4"))
 
 
 ```
-
 
 ```{r}
 
@@ -419,9 +325,3 @@ print(survival_plot)
 print(hp_plot)
 
 ```
-
-
-
-
-
-
