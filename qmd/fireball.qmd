@@ -31,6 +31,7 @@ In this exercise, we will create and showcase a function that simulates the "fir
 library(tidyverse)
 library(dplyr)
 library(here)
+library(purrr)
 
 
 ```
@@ -180,6 +181,25 @@ undead <- targets(
 enemies <- rbind(goblins, demons, undead) |>
   mutate(species = factor(species, levels = c("Goblin", "Orc", "Ogre", "Imp", "Hell Hound", "Demon Lord", "Zombie", "Ghoul", "Lich")),
          army = factor(army, levels = c("Goblin Horde", "Demonic Legion", "Undead Swarm")))
+
+```
+
+```{r}
+num_enemies = nrow(enemies) # determine length of the enemies data frame
+fireball_list = vector("list", length = nrow(enemies)) # initialize blank list to store fireball
+
+# for loop to run fireball function
+for (i in 1:num_enemies) {
+ fireball_effect = fireball(enemies[i,])
+ fireball_list[[i]] = fireball_effect
+}
+
+fireball_list_df = bind_rows(fireball_list) # turn list into dataframe
+
+
+# purrr to run fireball function
+fireball_list2 <- map(1:nrow(enemies), ~ fireball(enemies[.x, ]))
+fireball_list_df2 <- bind_rows(fireball_list) # Combine list elements into a dataframe
 
 ```
 
