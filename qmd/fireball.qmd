@@ -14,7 +14,17 @@ execute:
 
 # Introduction
 
-In this exercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (DnD) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in DnD often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on the results of dice rolls, the caster's difficulty class (DC), the affected creatures' damage immunities, resistances or vulnerabilities, and other modifiers. In order to simulate this, we will create three functions:
+In this exercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (DnD) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in DnD often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on 
+
+1) the results of dice rolls, 
+
+2) the caster's difficulty class (DC), 
+
+3) the affected creatures' damage immunities, resistances and/or vulnerabilities, and 
+
+4) other modifiers and/or bonuses. 
+
+In order to simulate this, we will create four functions:
 
 -   dice_roll(): A function to simulate rolling different types of dice
 
@@ -31,7 +41,7 @@ In this exercise, we will create and showcase a function that simulates the "fir
 library(tidyverse)
 library(dplyr)
 library(here)
-
+library(purrr)
 
 ```
 
@@ -53,7 +63,7 @@ source(here("R", "dice_roll.R"))
 
 The targets() function will create a dataframe representing enemies that will be hit by the fireball spell. The resulting dataframe will include information about the enemies as defined by the following inputs:
 
--   n = the number of unique enemy types
+-   n = number of enemies per enemy type
 
 -   HP = health points of each enemy or enemy type
 
@@ -173,7 +183,8 @@ undead <- targets(
   HP = c(10, 20, 50),
   proficiency_bonus = c(0, 0, 1),
   ability_modifier = c(0, 0, 2),
-  name = c("Zombie", "Ghoul", "Lich")
+  name = c("Zombie", "Ghoul", "Lich"),
+  vulnerabilities = "Fire"
 ) |>
   mutate(army = "Undead Swarm")
 
@@ -182,6 +193,8 @@ enemies <- rbind(goblins, demons, undead) |>
          army = factor(army, levels = c("Goblin Horde", "Demonic Legion", "Undead Swarm")))
 
 ```
+
+We can use for loops and purrr to run the fireball() function for each individual enemy, and combine the results into a dataframe.
 
 ```{r}
 num_enemies = nrow(enemies) # determine length of the enemies data frame
@@ -202,6 +215,9 @@ fireball_list_df2 <- bind_rows(fireball_list) # Combine list elements into a dat
 
 ```
 
+
+Alternatively, we can input the whole dataframe and run the function on the entire dataset at once. Doing this 1,000 times, we can find and plot the average damage taken for each enemy type. 
+
 ```{r}
 
 # Simulate 10,000 fireball scenarios
@@ -210,7 +226,7 @@ simulated_fireball <- replicate(1000, fireball(enemies), simplify = FALSE)
 # Convert list of dataframes into a single dataframe
 fireball_df <- bind_rows(simulated_fireball)
 
-# Summarize the data by name (average damage per enemy)
+# Summarize the data by species (average damage per enemy type)
 summarized_fireball <- fireball_df %>%
   group_by(army, species) %>%
   summarise(
@@ -233,6 +249,9 @@ ggplot(summarized_fireball, aes(x = species, y = avg_dmg, fill = army)) +
 
 
 ```
+As we can see, the fire resistance of the demons and the fire vulnerability of the undead played a major role in the amount of damage they took. We can also see smaller effects of the other modifiers within each enemy group. 
+
+Let's account for the target's starting HP by calculating and plotting each enemy type's probability of surviving a fireball.
 
 ```{r}
 
@@ -259,4 +278,5 @@ ggplot(survival_probabilities, aes(x = species, y = survival_rate, fill = army))
 
 ```
 
+We can see that enemies with higher HP (i.e. Ogres) have a much higher probability of surviving a fireball attack than enemies with lower HP (i.e. Goblins). The other modifiers, particularly the fire resistance of the demons, also seem be significant for enemies with low-mid HP. 
 
