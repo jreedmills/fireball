@@ -1,6 +1,9 @@
 ---
 title: "Fireball"
-author: "Jackson Mills"
+author:
+  - Jackson Mills
+  - Wesley Noble
+  - Ben Ladabaum
 format:
   html:
     embed-resources: true
@@ -11,10 +14,21 @@ execute:
   warning: false
   eval: true
 ---
+#### Links to additional information
+
+D&D Basic Rules: [link](https://media.wizards.com/2018/dnd/downloads/DnD_BasicRules_2018.pdf)
+
+D&D Combat: [link](https://roll20.net/compendium/dnd5e/Combat#content)
+
+D&D Spells: [link](https://roll20.net/compendium/dnd5e/Spells#content)
+
+D&D Monsters: [link](https://roll20.net/compendium/dnd5e/Monsters#content)
+
+Fireball spell: [link](https://roll20.net/compendium/dnd5e/Fireball#content)
 
 # Introduction
 
-In this exercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (DnD) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in DnD often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on 
+In this exercise, we will create and showcase a function that simulates the "fireball" spell from Dungeons & Dragons. Dungeons & Dragons (D&D) is a tabletop role-playing game that involves rolling dice to determine outcomes in an imagined fantasy-themed adventure. Combat in D&D often involves spells, which can have a variety of effects on the battlefield depending on the outcomes of associated dice rolls. One such spell, fireball, causes a fiery explosion that affects creatures in the target area. When a character casts fireball, the outcome depends on 
 
 1) the results of dice rolls, 
 
@@ -67,9 +81,9 @@ The targets() function will create a dataframe representing enemies that will be
 
 -   HP = health points of each enemy or enemy type
 
--   proficiency_bonus = a number that increases some dice rolls
+-   proficiency_bonus = a number added to some dice rolls
 
--   ability_modifier = a number that increases some dice rolls
+-   ability_modifier = a number added to some dice rolls
 
 -   name = the name of each enemy or enemy type
 
@@ -83,7 +97,7 @@ The targets() function will create a dataframe representing enemies that will be
 source(here("R", "targets.R"))
 ```
 
-### Inputs
+### Single inputs
 
 This function will accept single inputs for single enemy types. For example lets make 10 goblins:
 
@@ -99,11 +113,13 @@ knitr::kable(goblins)
 
 ```
 
-We can also enter vector inputs if there are multiple enemy types. For example, lets make 10 goblins and 10 orcs, which have different stats:
+### Multiple inputs
+
+We can also enter vector inputs if there are multiple enemy types. For example, lets make 5 goblins and 5 orcs, which have different stats:
 
 ```{r}
 
-enemies <- targets(n = c(10,10), 
+enemies <- targets(n = c(5,5), 
                 name = c("goblin", "orc"), 
                 ability_modifier = c(2, 1),
                 proficiency_bonus = c(0,0),
@@ -140,7 +156,9 @@ crispy_enemies <- enemies |>
 knitr::kable(crispy_enemies)
 ```
 
-It looks like something happened, but there's a lot of information. Lets make a new function, clean_dead(), to remove dead enemies from the battlefield and clean up the data.
+If we scroll right, we can see that things have happened, but that's a lot of information. Lets make a new function, clean_dead(), to remove dead enemies from the battlefield and clean up the data.
+
+### Clean dead function
 
 ```{r}
 
@@ -154,6 +172,8 @@ knitr::kable(crispy_enemies)
 ```
 
 We can see that there are less enemies than we started with, as some of them were killed by the fireball. Additionally, their HP has been updated according to the damage they took.
+
+# Simulating many fireballs
 
 Lets create and test fireball on a bunch of enemies with different stats, and plot our results. We'll have a goblin group, a demonic group (resistant to fire), and an undead group (vulnerable to fire), each with three different enemy types that have their own HP and modifiers.
 
@@ -194,6 +214,8 @@ enemies <- rbind(goblins, demons, undead) |>
 
 ```
 
+## For loops and purrr
+
 We can use for loops and purrr to run the fireball() function for each individual enemy, and combine the results into a dataframe.
 
 ```{r}
@@ -215,12 +237,15 @@ fireball_list_df2 <- bind_rows(fireball_list) # Combine list elements into a dat
 
 ```
 
+## 1,000 simulations
 
 Alternatively, we can input the whole dataframe and run the function on the entire dataset at once. Doing this 1,000 times, we can find and plot the average damage taken for each enemy type. 
 
+### Plotting average damage by enemy type
+
 ```{r}
 
-# Simulate 10,000 fireball scenarios
+# Simulate 1,000 fireball scenarios
 simulated_fireball <- replicate(1000, fireball(enemies), simplify = FALSE)
 
 # Convert list of dataframes into a single dataframe
@@ -239,7 +264,7 @@ ggplot(summarized_fireball, aes(x = species, y = avg_dmg, fill = army)) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
   labs(
-    title = "Average Fireball Damage by Enemy Type (Simulated 10,000 Scenarios)",
+    title = "Average Fireball Damage by Enemy Type (Simulated 1,000 Scenarios)",
     x = "Target",
     y = "Average Damage Taken",
     fill = "Enemy Group"
@@ -252,6 +277,8 @@ ggplot(summarized_fireball, aes(x = species, y = avg_dmg, fill = army)) +
 As we can see, the fire resistance of the demons and the fire vulnerability of the undead played a major role in the amount of damage they took. We can also see smaller effects of the other modifiers within each enemy group. 
 
 Let's account for the target's starting HP by calculating and plotting each enemy type's probability of surviving a fireball.
+
+### Plotting probability of surviving fireball by enemy type
 
 ```{r}
 
@@ -268,7 +295,7 @@ ggplot(survival_probabilities, aes(x = species, y = survival_rate, fill = army))
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
   labs(
-    title = "Survival Probability by Enemy Type (Simulated 10,000 Scenarios)",
+    title = "Survival Probability by Enemy Type (Simulated 1,000 Scenarios)",
     x = "Target Species",
     y = "Survival Probability",
     fill = "Enemy Group"
